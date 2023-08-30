@@ -1,0 +1,101 @@
+30-08-2023
+Duplicidades encontrada quando adiciona os campos no power bi:
+
+CAP_ACAOCAP_INTERNA.DESCRICAO  = 'SABER COM URNAS E SISTEMAS ELEITORAIS'
+
+ACAO_FORNECEDOR_SERVIDOR
+sk_AREA_CONHECIMENTO
+sk_FINALIDADE_PARTICIPANTE_TURMA
+sk_NOME_INSTRUTOR_TURMA
+sk_NOME_RESPONSAVEL
+TURMA_INSTRUTOR_MODALIDADE
+TURMA_INSTRUTOR_SERVIDOR
+
+
+Atividades sugeridas
+1-Ajustar o script sql dentro do ETL para remover duplicidades.
+	1.1-Verificar a real necessidade dos campos deixar ou remover campos acima.
+
+2-Ajustar o script sql dentro do ETL para que a informação não venha duplicada
+	2.1-Aplicar para a informação duplicada venha em linha unica.
+
+3-Criar uma medida de forma que o problema abaixo possa ser resolvido:	
+
+Estou construindo uma medida em dax no power bi, eu tenho um a tabela chamada "acao_interna fato_acao_interna"
+e as colunas chamadas: 
+ACAO_INTERNA
+sk_TURMA
+ACAO_EMPENHO
+sk_NOME_PARTICIPANTE_TURMA
+INSCRICAO_VALOR_TURMA
+Soma Incrição IND
+ACAO_FORNECEDOR_SERVIDOR
+
+A coluna "Soma Incrição IND" é uma medida descrita abaixo:
+Soma Incrição IND = SUM('acao_interna fato_acao_interna'[INSCRICAO_VALOR_TURMA])
+
+Estou com um problema que é ao adiconar a coluna "ACAO_FORNECEDOR_SERVIDOR" o numero de linhas se multriplica.
+Preciso criar uma nova medida para que o valor da soma do campo "INSCRICAO_VALOR_TURMA" seja o soma de sk_NOME_PARTICIPANTE_TURMA por sk_TURMA.
+
+Irei lhe passar um exemplo não faça nada ainda.
+
+Segue o exemplo:
+
+ACAO_INTERNA,sk_TURMA,ACAO_EMPENHO,sk_NOME_PARTICIPANTE_TURMA,INSCRICAO_VALOR_TURMA,Soma Incrição IND,ACAO_FORNECEDOR_SERVIDOR
+SABER COM URNAS E SISTEMAS ELEITORAIS,31,2022NE,11,417,8340,DOUGLAS 
+SABER COM URNAS E SISTEMAS ELEITORAIS,31,2022NE,11,417,8340,IBSEN 
+SABER COM URNAS E SISTEMAS ELEITORAIS,31,2022NE,11,417,8340,RODRIGO 
+SABER COM URNAS E SISTEMAS ELEITORAIS,31,2022NE,11,417,8340,THERESA 
+SABER COM URNAS E SISTEMAS ELEITORAIS,31,2022NE,11,417,8340,WOLMER 
+SABER COM URNAS E SISTEMAS ELEITORAIS,31,2022NE,20,417,8340,DOUGLAS 
+SABER COM URNAS E SISTEMAS ELEITORAIS,31,2022NE,20,417,8340,IBSEN 
+SABER COM URNAS E SISTEMAS ELEITORAIS,31,2022NE,20,417,8340,RODRIGO 
+SABER COM URNAS E SISTEMAS ELEITORAIS,31,2022NE,20,417,8340,THERESA 
+SABER COM URNAS E SISTEMAS ELEITORAIS,31,2022NE,20,417,8340,WOLMER 
+
+
+Chat GPT:
+medida que resolveu resumo:
+
+Soma Incrição Única = 
+SUMX(
+    SUMMARIZE(
+        'acao_interna fato_acao_interna',
+        'acao_interna fato_acao_interna'[sk_NOME_PARTICIPANTE_TURMA],
+        'acao_interna fato_acao_interna'[sk_TURMA],
+        "Valor Único", MAX('acao_interna fato_acao_interna'[INSCRICAO_VALOR_TURMA])
+    ),
+    [Valor Único]
+)
+
+Explicação:
+
+A medida Soma Incrição Única é projetada para resolver o problema de somar valores duplicados ao agregar a tabela pelos campos sk_NOME_PARTICIPANTE_TURMA e sk_TURMA. A medida funciona da seguinte maneira:
+
+1. SUMMARIZE:
+SUMMARIZE(
+    'acao_interna fato_acao_interna',
+    'acao_interna fato_acao_interna'[sk_NOME_PARTICIPANTE_TURMA],
+    'acao_interna fato_acao_interna'[sk_TURMA],
+    "Valor Único", MAX('acao_interna fato_acao_interna'[INSCRICAO_VALOR_TURMA])
+)
+
+SUMMARIZE é uma função DAX que retorna uma tabela resumida para os valores especificados. No nosso caso:
+
+A primeira tabela ('acao_interna fato_acao_interna') é a nossa tabela fonte.
+As próximas duas linhas (sk_NOME_PARTICIPANTE_TURMA e sk_TURMA) são as colunas pelas quais estamos agregando. Ou seja, estamos criando uma combinação única dessas duas colunas.
+"Valor Único" é uma nova coluna que estamos criando nesta tabela resumida. Esta coluna conterá o valor máximo da coluna INSCRICAO_VALOR_TURMA para cada combinação única. Como os valores são duplicados para combinações idênticas de sk_NOME_PARTICIPANTE_TURMA e sk_TURMA, pegar o valor máximo é o mesmo que pegar o valor real.
+
+2. SUMX:
+SUMX( ..., [Valor Único])
+
+SUMX é uma função DAX que itera sobre as linhas de uma tabela e avalia uma expressão para cada linha antes de somar os resultados. No nosso caso:
+
+O primeiro parâmetro é a tabela resumida que acabamos de criar usando SUMMARIZE.
+O segundo parâmetro, [Valor Único], é a expressão que queremos avaliar. Estamos simplesmente dizendo ao DAX para pegar o valor da coluna "Valor Único" que criamos anteriormente.
+O que acontece aqui é que, para cada linha na tabela resumida (que representa uma combinação única de sk_NOME_PARTICIPANTE_TURMA e sk_TURMA), pegamos o valor em "Valor Único" (que é o valor real de INSCRICAO_VALOR_TURMA para essa combinação) e somamos todos esses valores juntos.
+
+A combinação de SUMMARIZE e SUMX permite que ignoremos as duplicatas introduzidas por outras colunas (como ACAO_FORNECEDOR_SERVIDOR) e obtenhamos uma soma correta de INSCRICAO_VALOR_TURMA por combinação única de sk_NOME_PARTICIPANTE_TURMA e sk_TURMA.
+
+
+
